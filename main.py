@@ -1,5 +1,6 @@
+import time
 import pandas as pd
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.preprocessing import StandardScaler
 
 from models.mlp_model import get_mlp
@@ -49,15 +50,36 @@ def main():
     }
 
     print("\n🚀 Training and evaluating models...")
+
     for name, model in models.items():
+        print("\n==============================")
+        print(f"➡️  Now training: {name}")
+        print("==============================")
+
         try:
-            print(f"\n🔧 Training: {name}")
+            # Timer Start
+            start_time = time.time()
+
+            # Train the model
             model.fit(X_train, y_train)
-            evaluate_model(name, model, X_test, y_test)
+
+            # Timer End
+            elapsed_time = time.time() - start_time
+            print(f"⏱️ Training time for {name}: {elapsed_time:.2f} seconds")
+
+            # Cross-validation (only for base models)
+            if name not in ["Voting Ensemble", "Stacking Ensemble"]:
+                print(f"🔄 Performing 5-fold cross-validation for {name}...")
+                scores = cross_val_score(model, X_train, y_train, cv=5)
+                print(f"📊 Cross-Validation Accuracy (5-fold): {scores.mean():.4f} ± {scores.std():.4f}")
+
+            # Final evaluation
+            evaluate_model(name, model, X_test, y_test, X_train, y_train)
+
         except Exception as e:
             print(f"❌ Error in model {name}: {e}")
 
-    print("\n🏁 All models evaluated.")
+    print("\n🏁 All models evaluated successfully.")
 
 
 if __name__ == "__main__":
